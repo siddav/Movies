@@ -9,7 +9,7 @@ import java.util.List;
  */
 public class DiscoverMovieResponse {
     @SerializedName("page")
-    public String page;
+    public int page;
     @SerializedName("results")
     public List<Movie> results;
     @SerializedName("total_pages")

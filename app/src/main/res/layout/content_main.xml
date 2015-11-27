@@ -5,11 +5,10 @@
     android:layout_height="match_parent"
     app:layout_behavior="@string/appbar_scrolling_view_behavior"
     tools:showIn="@layout/activity_main" tools:context=".MainActivity">
-
-   <GridView
-       android:id="@+id/gv_movies"
-       android:layout_width="match_parent"
-       android:layout_height="match_parent"
-       android:numColumns="auto_fit"
-       />
+<fragment
+    android:id="@+id/movies_frag"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    class="com.example.sidda.movies.MoviesFragment"
+    />
 </RelativeLayout>

@@ -5,6 +5,7 @@ import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
 import android.widget.BaseAdapter;
+import android.widget.GridView;
 import android.widget.ImageView;
 
 import com.example.sidda.movies.constants.MovieConstants;
@@ -43,6 +44,7 @@ public class MovieAdapter extends BaseAdapter {
 
     @Override
     public View getView(int position, View convertView, ViewGroup parent) {
+
         if (convertView == null) {
             convertView = LayoutInflater.from(parent.getContext()).inflate(R.layout.movie_grid_view_item, parent, false);
         }
@@ -51,5 +53,6 @@ public class MovieAdapter extends BaseAdapter {
         String posterPath = movie.posterPath;
         Picasso.with(parent.getContext()).load(MovieConstants.BASE_IMAGE_URL+posterPath).into(imageView);
         return convertView;
+
     }
 }
