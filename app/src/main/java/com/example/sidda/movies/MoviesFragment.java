@@ -1,9 +1,12 @@
 package com.example.sidda.movies;
 
 import android.app.Activity;
+import android.content.SharedPreferences;
 import android.os.AsyncTask;
 import android.os.Bundle;
 import android.app.Fragment;
+import android.preference.PreferenceManager;
+import android.support.v7.app.AppCompatActivity;
 import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.View;
@@ -11,13 +14,10 @@ import android.view.ViewGroup;
 import android.widget.AbsListView;
 import android.widget.AdapterView;
 import android.widget.GridView;
-import android.widget.Toast;
-
 import com.example.sidda.movies.constants.MovieConstants;
 import com.example.sidda.movies.model.DiscoverMovieResponse;
 import com.example.sidda.movies.model.Movie;
 import com.google.gson.Gson;
-
 import java.io.BufferedReader;
 import java.io.IOException;
 import java.io.InputStream;
@@ -45,13 +45,22 @@ public class MoviesFragment extends Fragment implements AbsListView.OnScrollList
     // the fragment initialization parameters, e.g. ARG_ITEM_NUMBER
     private static final String ARG_PARAM1 = "param1";
     private static final String ARG_PARAM2 = "param2";
+    private static final String SAVE_QUERY = "query";
+    // by default popular movies
+    private String query = MovieConstants.MOVIE_POPULAR;
 
     @Bind(R.id.gv_movies)
     GridView moviesGridView;
     MovieAdapter adapter = new MovieAdapter();
     DiscoverMovieResponse moviesResult = new DiscoverMovieResponse();
-    boolean isLoading = true;
+    volatile boolean isLoading = true;
     boolean userScrolled = false;
+
+    @Override
+    public void onSaveInstanceState(Bundle outState) {
+        super.onSaveInstanceState(outState);
+        outState.putString(SAVE_QUERY, query);
+    }
 
     // TODO: Rename and change types of parameters
     private String mParam1;
@@ -81,14 +90,18 @@ public class MoviesFragment extends Fragment implements AbsListView.OnScrollList
     }
 
     @Override
-    public void onCreate(Bundle savedInstanceState) {
-        super.onCreate(savedInstanceState);
-        if (getArguments() != null) {
-            mParam1 = getArguments().getString(ARG_PARAM1);
-            mParam2 = getArguments().getString(ARG_PARAM2);
+    public void onActivityCreated(Bundle savedInstanceState) {
+        super.onActivityCreated(savedInstanceState);
+        if (savedInstanceState != null) {
+           query = savedInstanceState.getString(SAVE_QUERY);
         }
-        // call for page 1
-        new FetchMoviesTask().execute(1);
+        SharedPreferences preferences = PreferenceManager.getDefaultSharedPreferences(getActivity());
+        String prefQuery = preferences.getString(MovieConstants.PREF_QUERY, null);
+        if (prefQuery != null) {
+            query = prefQuery;
+        }
+            // call for page 1
+            new FetchMoviesTask(query).execute(1);
     }
 
     @Override
@@ -103,9 +116,9 @@ public class MoviesFragment extends Fragment implements AbsListView.OnScrollList
         moviesGridView.setOnItemClickListener(new AdapterView.OnItemClickListener() {
             @Override
             public void onItemClick(AdapterView<?> parent, View view, int position, long id) {
-                Toast t = Toast.makeText(getActivity(), "position " + position, Toast.LENGTH_SHORT);
-                t.show();
-                if(mListener != null ) {
+               // Toast t = Toast.makeText(getActivity(), "position " + position, Toast.LENGTH_SHORT);
+               // t.show();
+                if (mListener != null) {
                     mListener.onMovieClick(adapter.getItemId(position));
                 }
             }
@@ -142,11 +155,18 @@ public class MoviesFragment extends Fragment implements AbsListView.OnScrollList
     public void onScroll(AbsListView view, int firstVisibleItem, int visibleItemCount, int totalItemCount) {
         int currentPage = moviesResult.page;
         int totalPages = moviesResult.totalPages;
-        if(userScrolled && firstVisibleItem + visibleItemCount == totalItemCount && currentPage < totalPages){
-            Toast t = Toast.makeText(getActivity(), "task called for page " + (currentPage+1), Toast.LENGTH_SHORT);
-            t.show();
-            new FetchMoviesTask().execute(currentPage + 1);
+        if (userScrolled && firstVisibleItem + visibleItemCount == totalItemCount && currentPage < totalPages && !isLoading) {
+           // Toast t = Toast.makeText(getActivity(), "task called for page " + (currentPage+1), Toast.LENGTH_SHORT);
+           // t.show();
+            new FetchMoviesTask(query).execute(currentPage + 1);
         }
+    }
+
+    public void updateContent(String query) {
+        this.query = query;
+        adapter.clear();
+        // call for page 1
+        new FetchMoviesTask(query).execute(1);
     }
 
     /**
@@ -162,16 +182,29 @@ public class MoviesFragment extends Fragment implements AbsListView.OnScrollList
     public interface OnMovieClickListener {
         // TODO: Update argument type and name
         public void onMovieClick(long position);
+        public void onMoviesLoaded(long defaultPosition);
     }
 
     private class FetchMoviesTask extends AsyncTask<Integer, Void, List<Movie>> {
         private final String LOG_TAG = FetchMoviesTask.class.getSimpleName();
+        private String query;
+
+        FetchMoviesTask(String query) {
+            this.query = query;
+        }
 
         @Override
         protected void onPostExecute(List<Movie> movies) {
             isLoading = false;
             if(movies != null) {
                 adapter.addAllMovies(movies);
+                // check in main activity whether to display default 0th position movie
+                mListener.onMoviesLoaded(adapter.getItemId(0));
+            }
+            if (query.equalsIgnoreCase(MovieConstants.MOVIE_TOP_RATED)) {
+                ((AppCompatActivity)getActivity()).getSupportActionBar().setTitle(R.string.top_rated);
+            } else {
+                ((AppCompatActivity)getActivity()).getSupportActionBar().setTitle(R.string.popular);
             }
         }
 
@@ -186,8 +219,13 @@ public class MoviesFragment extends Fragment implements AbsListView.OnScrollList
             }
             try {
                 String apiKey = MovieConstants.MOVIE_DB_API_KEY;
-
-                URL url = new URL(MovieConstants.MOVIE_DISCOVER_BASE_URL+"api_key="+apiKey+"&page="+page);
+                // this is added to just let the reviewer to add his/her api key.
+                if (apiKey.equalsIgnoreCase("replace this key")) {
+                     Log.e(LOG_TAG, "please replace api key in MovieConstants.MOVIE_DB_API_KEY in com.example.sidda.movies.constants.MovieConstants");
+                    return null;
+                }
+                String fetchMoviesQuery = query+"&api_key="+apiKey+"&page="+page;
+                URL url = new URL(fetchMoviesQuery);
                 HttpsURLConnection urlConnection = (HttpsURLConnection) url.openConnection();
                 urlConnection.setRequestMethod("GET");
                 urlConnection.connect();
@@ -210,7 +248,8 @@ public class MoviesFragment extends Fragment implements AbsListView.OnScrollList
                     return null;
                 }
                 movieJsonString = buffer.toString();
-                Log.v(LOG_TAG, "fetched json" + movieJsonString);
+                // Log.v("fetchMoviesQuery", fetchMoviesQuery);
+                // Log.v(LOG_TAG, "fetched json" + movieJsonString);
                 Gson gson = new Gson();
                 moviesResult = gson.fromJson(movieJsonString, DiscoverMovieResponse.class);
                 List<Movie> moviesList = moviesResult.results;

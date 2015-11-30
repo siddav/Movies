@@ -27,6 +27,10 @@ public class MovieAdapter extends BaseAdapter {
         notifyDataSetChanged();
     }
 
+    public void clear() {
+        moviesList.removeAll(moviesList);
+    }
+
     @Override
     public int getCount() {
         return moviesList.size();

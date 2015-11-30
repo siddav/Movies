@@ -48,6 +48,8 @@ public class MovieDetailFragment extends Fragment {
     // the fragment initialization parameters, e.g. ARG_ITEM_NUMBER
     private static final String ARG_PARAM1 = "param1";
     private static final String ARG_PARAM2 = "param2";
+    private static final String SELECTED_MOVIE = "selectedMovie";
+    private long selectedMovieId = 0l;
 
     // TODO: Rename and change types of parameters
     private String mParam1;
@@ -63,6 +65,12 @@ public class MovieDetailFragment extends Fragment {
     @Bind(R.id.rating) TextView rating;
     @Bind(R.id.movie_description) TextView description;
     private OnFragmentInteractionListener mListener;
+
+    @Override
+    public void onSaveInstanceState(Bundle outState) {
+        super.onSaveInstanceState(outState);
+        outState.putParcelable(SELECTED_MOVIE, movie);
+    }
 
     /**
      * Use this factory method to create a new instance of
@@ -87,6 +95,21 @@ public class MovieDetailFragment extends Fragment {
     }
 
     @Override
+    public void onActivityCreated(Bundle savedInstanceState) {
+        super.onActivityCreated(savedInstanceState);
+        if(savedInstanceState != null) {
+          movie = savedInstanceState.getParcelable(SELECTED_MOVIE);
+          updateContent(movie);
+        } else {
+            Intent intent = getActivity().getIntent();
+            if(intent.getExtras() != null) {
+                selectedMovieId = intent.getExtras().getLong("movieId");
+                new FetchMovieTask().execute(selectedMovieId);
+            }
+        }
+    }
+
+    @Override
     public void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         if (getArguments() != null) {
@@ -101,12 +124,6 @@ public class MovieDetailFragment extends Fragment {
         // Inflate the layout for this fragment
         View view = inflater.inflate(R.layout.fragment_movie_detail, container, false);
         ButterKnife.bind(this, view);
-
-        Intent intent = getActivity().getIntent();
-            if(intent.getExtras() != null) {
-                long movieId = intent.getExtras().getLong("movieId");
-                new FetchMovieTask().execute(movieId);
-            }
         return view;
     }
 
@@ -133,13 +150,22 @@ public class MovieDetailFragment extends Fragment {
         super.onDetach();
         mListener = null;
     }
-    // intially no item selected
-    public void intialize() {
-        getView().setVisibility(View.INVISIBLE);
-    }
+
     public void updateContent(long movieId) {
         getView().setVisibility(View.VISIBLE);
         new FetchMovieTask().execute(movieId);
+    }
+
+    public void updateContent(Movie movie) {
+        if (movie != null) {
+            this.movie = movie;
+            movieName.setText(movie.title);
+            Picasso.with(getActivity()).load(MovieConstants.BASE_IMAGE_URL + movie.posterPath).into(moviePoster);
+            releaseYear.setText(getYear(movie.releaseDate));
+            movieLength.setText(movie.runtime + " min");
+            description.setText(movie.overView);
+            rating.setText(movie.rating+"/10");
+        }
     }
     /**
      * This interface must be implemented by activities that contain this
@@ -161,13 +187,7 @@ public class MovieDetailFragment extends Fragment {
         @Override
         protected void onPostExecute(Movie mv) {
             if (mv != null) {
-                movie = mv;
-                movieName.setText(movie.title);
-                Picasso.with(getActivity()).load(MovieConstants.BASE_IMAGE_URL + movie.posterPath).into(moviePoster);
-                releaseYear.setText(getYear(movie.releaseDate));
-                movieLength.setText(movie.runtime + " min");
-                description.setText(movie.overView);
-                rating.setText(movie.rating+"/10");
+                updateContent(mv);
             }
         }
 

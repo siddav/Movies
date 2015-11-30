@@ -1,16 +1,20 @@
 package com.example.sidda.movies;
 
 import android.content.Intent;
+import android.content.SharedPreferences;
 import android.net.Uri;
 import android.os.Bundle;
+import android.preference.PreferenceManager;
 import android.support.v7.app.AppCompatActivity;
 import android.support.v7.widget.Toolbar;
 import android.view.Menu;
 import android.view.MenuItem;
-import android.widget.Toast;
+
+import com.example.sidda.movies.constants.MovieConstants;
 
 public class MainActivity extends AppCompatActivity implements MoviesFragment.OnMovieClickListener, MovieDetailFragment.OnFragmentInteractionListener {
     boolean isTwoPaneLayout = false;
+
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
@@ -19,9 +23,8 @@ public class MainActivity extends AppCompatActivity implements MoviesFragment.On
         setSupportActionBar(toolbar);
         MovieDetailFragment movieDetailFragment = (MovieDetailFragment) getFragmentManager()
                 .findFragmentById(R.id.movie_detail_frag);
-        if(movieDetailFragment != null) {
-                       isTwoPaneLayout  = true;
-            movieDetailFragment.intialize();
+        if (movieDetailFragment != null) {
+           isTwoPaneLayout = true;
         }
         /**FloatingActionButton fab = (FloatingActionButton) findViewById(R.id.fab);
         fab.setOnClickListener(new View.OnClickListener() {
@@ -48,11 +51,25 @@ public class MainActivity extends AppCompatActivity implements MoviesFragment.On
         int id = item.getItemId();
 
         //noinspection SimplifiableIfStatement
-        if (id == R.id.action_settings) {
+        /**if (id == R.id.action_settings) {
             return true;
+        } **/
+        MoviesFragment moviesFragment = (MoviesFragment) getFragmentManager().findFragmentById(R.id.movies_frag);
+        SharedPreferences preferences = PreferenceManager.getDefaultSharedPreferences(this);
+        SharedPreferences.Editor editor = preferences.edit();
+        switch (id) {
+            case R.id.top_rated:
+                editor.putString(MovieConstants.PREF_QUERY, MovieConstants.MOVIE_TOP_RATED);
+                editor.commit();
+                moviesFragment.updateContent(MovieConstants.MOVIE_TOP_RATED);
+                return true;
+            case R.id.popular:
+                editor.putString(MovieConstants.PREF_QUERY, MovieConstants.MOVIE_POPULAR);
+                editor.commit();
+                moviesFragment.updateContent(MovieConstants.MOVIE_POPULAR);
+                return true;
+            default: return super.onOptionsItemSelected(item);
         }
-
-        return super.onOptionsItemSelected(item);
     }
     @Override
     public void onMovieClick(long position) {
@@ -69,8 +86,14 @@ public class MainActivity extends AppCompatActivity implements MoviesFragment.On
     }
 
     @Override
+    public void onMoviesLoaded(long position) {
+        if(isTwoPaneLayout) {
+            onMovieClick(position);
+        }
+    }
+
+    @Override
     public void onFragmentInteraction(Uri uri) {
-        Toast t = Toast.makeText(getApplicationContext(), "uri " + uri, Toast.LENGTH_SHORT);
-        t.show();
+        // not implemented - no interaction till now
     }
 }

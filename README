@@ -1,0 +1,4 @@
+Please replace api key in MovieConstants.MOVIE_DB_API_KEY in com.example.sidda.movies.constants.MovieConstants file.
+
+eg:
+public static final String MOVIE_DB_API_KEY = "my api key";
