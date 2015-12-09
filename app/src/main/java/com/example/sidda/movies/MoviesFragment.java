@@ -17,6 +17,8 @@ import android.widget.GridView;
 import com.example.sidda.movies.constants.MovieConstants;
 import com.example.sidda.movies.model.DiscoverMovieResponse;
 import com.example.sidda.movies.model.Movie;
+import com.example.sidda.movies.network.MoviesService;
+import com.example.sidda.movies.network.MoviesServiceProvider;
 import com.google.gson.Gson;
 import java.io.BufferedReader;
 import java.io.IOException;
@@ -30,6 +32,10 @@ import javax.net.ssl.HttpsURLConnection;
 
 import butterknife.Bind;
 import butterknife.ButterKnife;
+import retrofit.Call;
+import retrofit.Callback;
+import retrofit.Response;
+import retrofit.Retrofit;
 
 
 /**
@@ -116,8 +122,8 @@ public class MoviesFragment extends Fragment implements AbsListView.OnScrollList
         moviesGridView.setOnItemClickListener(new AdapterView.OnItemClickListener() {
             @Override
             public void onItemClick(AdapterView<?> parent, View view, int position, long id) {
-               // Toast t = Toast.makeText(getActivity(), "position " + position, Toast.LENGTH_SHORT);
-               // t.show();
+                // Toast t = Toast.makeText(getActivity(), "position " + position, Toast.LENGTH_SHORT);
+                // t.show();
                 if (mListener != null) {
                     mListener.onMovieClick(adapter.getItemId(position));
                 }
@@ -169,6 +175,19 @@ public class MoviesFragment extends Fragment implements AbsListView.OnScrollList
         new FetchMoviesTask(query).execute(1);
     }
 
+    public void updateAdapter(List<Movie> movies) {
+        isLoading = false;
+        if(movies != null) {
+            adapter.addAllMovies(movies);
+            // check in main activity whether to display default 0th position movie
+            mListener.onMoviesLoaded(adapter.getItemId(0));
+        }
+        if (query.equalsIgnoreCase(MovieConstants.MOVIE_TOP_RATED)) {
+            ((AppCompatActivity)getActivity()).getSupportActionBar().setTitle(R.string.top_rated);
+        } else {
+            ((AppCompatActivity)getActivity()).getSupportActionBar().setTitle(R.string.popular);
+        }
+    }
     /**
      * This interface must be implemented by activities that contain this
      * fragment to allow an interaction in this fragment to be communicated
@@ -185,7 +204,7 @@ public class MoviesFragment extends Fragment implements AbsListView.OnScrollList
         public void onMoviesLoaded(long defaultPosition);
     }
 
-    private class FetchMoviesTask extends AsyncTask<Integer, Void, List<Movie>> {
+    private class FetchMoviesTask extends AsyncTask<Integer, Void, Void> {
         private final String LOG_TAG = FetchMoviesTask.class.getSimpleName();
         private String query;
 
@@ -194,73 +213,36 @@ public class MoviesFragment extends Fragment implements AbsListView.OnScrollList
         }
 
         @Override
-        protected void onPostExecute(List<Movie> movies) {
-            isLoading = false;
-            if(movies != null) {
-                adapter.addAllMovies(movies);
-                // check in main activity whether to display default 0th position movie
-                mListener.onMoviesLoaded(adapter.getItemId(0));
-            }
-            if (query.equalsIgnoreCase(MovieConstants.MOVIE_TOP_RATED)) {
-                ((AppCompatActivity)getActivity()).getSupportActionBar().setTitle(R.string.top_rated);
-            } else {
-                ((AppCompatActivity)getActivity()).getSupportActionBar().setTitle(R.string.popular);
-            }
-        }
-
-        @Override
-        protected List<Movie> doInBackground(Integer... params) {
-            String movieJsonString = null;
+        protected Void doInBackground(Integer... params) {
             isLoading = true;
+            String apiKey = MovieConstants.MOVIE_DB_API_KEY;
+            if (apiKey.equalsIgnoreCase("replace this key")) {
+                Log.e(LOG_TAG, "please replace api key in MovieConstants.MOVIE_DB_API_KEY in com.example.sidda.movies.constants.MovieConstants");
+            }
             // default page number
+            // this is added to just let the reviewer to add his/her api key.
             int page = 1;
             if (params != null) {
                page = params[0];
             }
-            try {
-                String apiKey = MovieConstants.MOVIE_DB_API_KEY;
-                // this is added to just let the reviewer to add his/her api key.
-                if (apiKey.equalsIgnoreCase("replace this key")) {
-                     Log.e(LOG_TAG, "please replace api key in MovieConstants.MOVIE_DB_API_KEY in com.example.sidda.movies.constants.MovieConstants");
-                    return null;
-                }
-                String fetchMoviesQuery = query+"&api_key="+apiKey+"&page="+page;
-                URL url = new URL(fetchMoviesQuery);
-                HttpsURLConnection urlConnection = (HttpsURLConnection) url.openConnection();
-                urlConnection.setRequestMethod("GET");
-                urlConnection.connect();
 
-                // Read the input stream into a String
-                InputStream inputStream = urlConnection.getInputStream();
-                StringBuffer buffer = new StringBuffer();
-                if (inputStream == null) {
-                    // Nothing to do.
-                    return null;
-                }
-                BufferedReader reader = new BufferedReader(new InputStreamReader(inputStream));
+                MoviesService moviesService = MoviesServiceProvider.getMoviesService();
+                Call<DiscoverMovieResponse> call = moviesService.discoverMovies(apiKey, query, page);
+                call.enqueue(new Callback<DiscoverMovieResponse>() {
+                    @Override
+                    public void onResponse(Response<DiscoverMovieResponse> response, Retrofit retrofit) {
+                        Log.v(LOG_TAG, "inside response "+ query);
+                        if (response.isSuccess()) {
+                            moviesResult = response.body();
+                            updateAdapter(moviesResult.results);
+                        }
+                    }
 
-                String line;
-                while ((line = reader.readLine()) != null) {
-                    buffer.append(line + "\n");
-                }
-
-                if (buffer.length() == 0) {
-                    return null;
-                }
-                movieJsonString = buffer.toString();
-                // Log.v("fetchMoviesQuery", fetchMoviesQuery);
-                // Log.v(LOG_TAG, "fetched json" + movieJsonString);
-                Gson gson = new Gson();
-                moviesResult = gson.fromJson(movieJsonString, DiscoverMovieResponse.class);
-                List<Movie> moviesList = moviesResult.results;
-                return moviesList;
-
-            } catch (MalformedURLException e) {
-                e.printStackTrace();
-            } catch (IOException e) {
-                e.printStackTrace();
-            }
-
+                    @Override
+                    public void onFailure(Throwable t) {
+                         Log.e(LOG_TAG, t.getMessage());
+                    }
+                });
             return null;
         }
     }

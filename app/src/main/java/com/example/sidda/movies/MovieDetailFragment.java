@@ -6,33 +6,26 @@ import android.net.Uri;
 import android.os.AsyncTask;
 import android.os.Bundle;
 import android.app.Fragment;
-import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
 import android.widget.ImageView;
 import android.widget.TextView;
-
 import com.example.sidda.movies.constants.MovieConstants;
 import com.example.sidda.movies.model.Movie;
-import com.google.gson.Gson;
+import com.example.sidda.movies.network.MoviesService;
+import com.example.sidda.movies.network.MoviesServiceProvider;
 import com.squareup.picasso.Picasso;
-
-import java.io.BufferedReader;
-import java.io.IOException;
-import java.io.InputStream;
-import java.io.InputStreamReader;
-import java.net.MalformedURLException;
-import java.net.URL;
 import java.text.ParseException;
 import java.text.SimpleDateFormat;
 import java.util.Calendar;
 import java.util.Date;
-
-import javax.net.ssl.HttpsURLConnection;
-
 import butterknife.Bind;
 import butterknife.ButterKnife;
+import retrofit.Call;
+import retrofit.Callback;
+import retrofit.Response;
+import retrofit.Retrofit;
 
 
 /**
@@ -181,59 +174,35 @@ public class MovieDetailFragment extends Fragment {
         // TODO: Update argument type and name
         public void onFragmentInteraction(Uri uri);
     }
-    private class FetchMovieTask extends AsyncTask<Long, Void, Movie> {
+    private class FetchMovieTask extends AsyncTask<Long, Void, Void> {
         private final String LOG_TAG = FetchMovieTask.class.getSimpleName();
 
         @Override
-        protected void onPostExecute(Movie mv) {
-            if (mv != null) {
-                updateContent(mv);
-            }
-        }
-
-        @Override
-        protected Movie doInBackground(Long... params) {
+        protected Void doInBackground(Long... params) {
             if (params.length == 0) {
                 return null;
             }
             long movieId = params[0];
-            String movieJsonString = null;
-            try {
                 String apiKey = MovieConstants.MOVIE_DB_API_KEY;
 
-                URL url = new URL(MovieConstants.MOVIE_ID_BASE_URL + movieId + "?api_key=" + apiKey);
-                HttpsURLConnection urlConnection = (HttpsURLConnection) url.openConnection();
-                urlConnection.setRequestMethod("GET");
-                urlConnection.connect();
+                MoviesService moviesService = MoviesServiceProvider.getMoviesService();
+                Call<Movie> call = moviesService.getMovieDetails(movieId, apiKey);
+                call.enqueue(new Callback<Movie>() {
+                    @Override
+                    public void onResponse(Response<Movie> response, Retrofit retrofit) {
+                        if(response.isSuccess()) {
+                            Movie mv = response.body();
+                            if(mv!=null) {
+                                updateContent(mv);
+                            }
+                        }
+                    }
 
-                // Read the input stream into a String
-                InputStream inputStream = urlConnection.getInputStream();
-                StringBuffer buffer = new StringBuffer();
-                if (inputStream == null) {
-                    // Nothing to do.
-                    return null;
-                }
-                BufferedReader reader = new BufferedReader(new InputStreamReader(inputStream));
+                    @Override
+                    public void onFailure(Throwable t) {
 
-                String line;
-                while ((line = reader.readLine()) != null) {
-                    buffer.append(line + "\n");
-                }
-
-                if (buffer.length() == 0) {
-                    return null;
-                }
-                movieJsonString = buffer.toString();
-                Log.v(LOG_TAG, "fetched json" + movieJsonString);
-
-                Gson gson = new Gson();
-                Movie movie = gson.fromJson(movieJsonString, Movie.class);
-                return movie;
-            } catch (MalformedURLException e) {
-                e.printStackTrace();
-            } catch (IOException e) {
-                e.printStackTrace();
-            }
+                    }
+                });
             return null;
         }
     }
