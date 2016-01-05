@@ -2,6 +2,8 @@ package com.example.sidda.movies.network;
 
 import com.example.sidda.movies.model.DiscoverMovieResponse;
 import com.example.sidda.movies.model.Movie;
+import com.example.sidda.movies.model.MovieReviewsResponse;
+import com.example.sidda.movies.model.VideoResponse;
 
 import java.util.List;
 
@@ -19,4 +21,10 @@ public interface MoviesService {
 
     @GET("movie/{movieId}")
     Call<Movie> getMovieDetails(@Path("movieId") long movieId, @Query("api_key") String apiKey);
+
+    @GET("movie/{movieId}/reviews")
+    Call<MovieReviewsResponse> getMovieReviews(@Path("movieId") long movieId, @Query("api_key") String apiKey);
+
+    @GET("movie/{movieId}/videos")
+    Call<VideoResponse> getMovieVideos(@Path("movieId") long movieId, @Query("api_key") String apiKey);
 }

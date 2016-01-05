@@ -15,4 +15,5 @@ public class MovieConstants {
 
     // Application specific constants
     public static final String PREF_QUERY = "pref_query";
+    public static final String YOUTUBE_THUMBNAIL_BASE_URL = "http://img.youtube.com/vi/";
 }

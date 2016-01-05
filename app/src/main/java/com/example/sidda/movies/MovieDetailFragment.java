@@ -1,18 +1,21 @@
 package com.example.sidda.movies;
 
 import android.app.Activity;
-import android.content.Intent;
 import android.net.Uri;
 import android.os.AsyncTask;
 import android.os.Bundle;
-import android.app.Fragment;
+import android.support.v4.app.Fragment;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
 import android.widget.ImageView;
 import android.widget.TextView;
+import com.example.sidda.movies.adapters.ReviewsAdapter;
+import com.example.sidda.movies.adapters.TrailersAdapter;
 import com.example.sidda.movies.constants.MovieConstants;
 import com.example.sidda.movies.model.Movie;
+import com.example.sidda.movies.model.MovieReviewsResponse;
+import com.example.sidda.movies.model.VideoResponse;
 import com.example.sidda.movies.network.MoviesService;
 import com.example.sidda.movies.network.MoviesServiceProvider;
 import com.squareup.picasso.Picasso;
@@ -39,14 +42,9 @@ import retrofit.Retrofit;
 public class MovieDetailFragment extends Fragment {
     // TODO: Rename parameter arguments, choose names that match
     // the fragment initialization parameters, e.g. ARG_ITEM_NUMBER
-    private static final String ARG_PARAM1 = "param1";
-    private static final String ARG_PARAM2 = "param2";
+    public static final String SELECTED_MOVIE_ID = "movieId";
     private static final String SELECTED_MOVIE = "selectedMovie";
     private long selectedMovieId = 0l;
-
-    // TODO: Rename and change types of parameters
-    private String mParam1;
-    private String mParam2;
 
     Movie movie;
     @Bind(R.id.movie_name)
@@ -57,6 +55,14 @@ public class MovieDetailFragment extends Fragment {
     @Bind(R.id.movie_length) TextView movieLength;
     @Bind(R.id.rating) TextView rating;
     @Bind(R.id.movie_description) TextView description;
+    /*@Bind(R.id.trailers_thumbnails)
+    ListView thumbNailsListView;
+    @Bind(R.id.movie_reviews)
+    ListView reviewsListView;*/
+
+    ReviewsAdapter reviewsAdapter = new ReviewsAdapter();
+    TrailersAdapter trailersAdapter = new TrailersAdapter();
+
     private OnFragmentInteractionListener mListener;
 
     @Override
@@ -77,8 +83,6 @@ public class MovieDetailFragment extends Fragment {
     public static MovieDetailFragment newInstance(String param1, String param2) {
         MovieDetailFragment fragment = new MovieDetailFragment();
         Bundle args = new Bundle();
-        args.putString(ARG_PARAM1, param1);
-        args.putString(ARG_PARAM2, param2);
         fragment.setArguments(args);
         return fragment;
     }
@@ -93,21 +97,27 @@ public class MovieDetailFragment extends Fragment {
         if(savedInstanceState != null) {
           movie = savedInstanceState.getParcelable(SELECTED_MOVIE);
           updateContent(movie);
-        } else {
+        }
+        /*else {
             Intent intent = getActivity().getIntent();
             if(intent.getExtras() != null) {
                 selectedMovieId = intent.getExtras().getLong("movieId");
                 new FetchMovieTask().execute(selectedMovieId);
             }
-        }
+        }*/
+    }
+
+    @Override
+    public void onResume() {
+        super.onResume();
+        //updateContent(selectedMovieId);
     }
 
     @Override
     public void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         if (getArguments() != null) {
-            mParam1 = getArguments().getString(ARG_PARAM1);
-            mParam2 = getArguments().getString(ARG_PARAM2);
+            selectedMovieId = getArguments().getLong(SELECTED_MOVIE_ID);
         }
     }
 
@@ -117,6 +127,8 @@ public class MovieDetailFragment extends Fragment {
         // Inflate the layout for this fragment
         View view = inflater.inflate(R.layout.fragment_movie_detail, container, false);
         ButterKnife.bind(this, view);
+        /*thumbNailsListView.setAdapter(trailersAdapter);
+        reviewsListView.setAdapter(reviewsAdapter);*/
         return view;
     }
 
@@ -147,17 +159,31 @@ public class MovieDetailFragment extends Fragment {
     public void updateContent(long movieId) {
         getView().setVisibility(View.VISIBLE);
         new FetchMovieTask().execute(movieId);
+        new FetchTrailersTask().execute(movieId);
+        //new FetchReviewsTask().execute(movieId);
     }
 
     public void updateContent(Movie movie) {
         if (movie != null) {
             this.movie = movie;
-            movieName.setText(movie.title);
+            movieName.setText(movie.title + " " + movie.id);
             Picasso.with(getActivity()).load(MovieConstants.BASE_IMAGE_URL + movie.posterPath).into(moviePoster);
             releaseYear.setText(getYear(movie.releaseDate));
             movieLength.setText(movie.runtime + " min");
             description.setText(movie.overView);
             rating.setText(movie.rating+"/10");
+        }
+    }
+
+    public void updateTrailers(VideoResponse videoResponse) {
+       if(videoResponse != null && videoResponse.videos != null) {
+         trailersAdapter.addAllVideos(videoResponse.videos);
+       }
+    }
+
+    public void updateReviews(MovieReviewsResponse reviewsResponse) {
+        if(reviewsResponse != null && reviewsResponse.reviews != null) {
+            reviewsAdapter.addAllVideos(reviewsResponse.reviews);
         }
     }
     /**
@@ -206,6 +232,66 @@ public class MovieDetailFragment extends Fragment {
             return null;
         }
     }
+    private class FetchTrailersTask extends AsyncTask<Long, Void, Void> {
+        @Override
+        protected Void doInBackground(Long... params) {
+            if(params == null) {
+                return null;
+            }
+            long key = params[0];
+            String apiKey = MovieConstants.MOVIE_DB_API_KEY;
+            MoviesService moviesService = MoviesServiceProvider.getMoviesService();
+            Call<VideoResponse> call = moviesService.getMovieVideos(key, apiKey);
+            call.enqueue(new Callback<VideoResponse>() {
+                @Override
+                public void onResponse(Response<VideoResponse> response, Retrofit retrofit) {
+                    if(response.isSuccess()) {
+                        VideoResponse videoResponse = response.body();
+                        if(videoResponse!=null) {
+                            updateTrailers(videoResponse);
+                        }
+                    }
+                }
+
+                @Override
+                public void onFailure(Throwable t) {
+
+                }
+            });
+            return null;
+        }
+    }
+
+    private class FetchReviewsTask extends AsyncTask<Long, Void, Void> {
+        @Override
+        protected Void doInBackground(Long... params) {
+            if(params == null) {
+                return null;
+            }
+            long key = params[0];
+            String apiKey = MovieConstants.MOVIE_DB_API_KEY;
+            MoviesService moviesService = MoviesServiceProvider.getMoviesService();
+            Call<MovieReviewsResponse> call = moviesService.getMovieReviews(key, apiKey);
+            call.enqueue(new Callback<MovieReviewsResponse>() {
+                @Override
+                public void onResponse(Response<MovieReviewsResponse> response, Retrofit retrofit) {
+                    if(response.isSuccess()) {
+                        MovieReviewsResponse reviewsResponse = response.body();
+                        if(reviewsResponse!=null) {
+                            updateReviews(reviewsResponse);
+                        }
+                    }
+                }
+
+                @Override
+                public void onFailure(Throwable t) {
+
+                }
+            });
+            return null;
+        }
+    }
+
     private String getYear(String date) {
         SimpleDateFormat sdf = new SimpleDateFormat("yyyy-mm-dd");
         try {

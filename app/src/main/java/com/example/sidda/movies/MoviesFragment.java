@@ -4,7 +4,7 @@ import android.app.Activity;
 import android.content.SharedPreferences;
 import android.os.AsyncTask;
 import android.os.Bundle;
-import android.app.Fragment;
+import android.support.v4.app.Fragment;
 import android.preference.PreferenceManager;
 import android.support.v7.app.AppCompatActivity;
 import android.util.Log;
@@ -14,22 +14,14 @@ import android.view.ViewGroup;
 import android.widget.AbsListView;
 import android.widget.AdapterView;
 import android.widget.GridView;
+
+import com.example.sidda.movies.adapters.MovieAdapter;
 import com.example.sidda.movies.constants.MovieConstants;
 import com.example.sidda.movies.model.DiscoverMovieResponse;
 import com.example.sidda.movies.model.Movie;
 import com.example.sidda.movies.network.MoviesService;
 import com.example.sidda.movies.network.MoviesServiceProvider;
-import com.google.gson.Gson;
-import java.io.BufferedReader;
-import java.io.IOException;
-import java.io.InputStream;
-import java.io.InputStreamReader;
-import java.net.MalformedURLException;
-import java.net.URL;
 import java.util.List;
-
-import javax.net.ssl.HttpsURLConnection;
-
 import butterknife.Bind;
 import butterknife.ButterKnife;
 import retrofit.Call;
@@ -243,6 +235,20 @@ public class MoviesFragment extends Fragment implements AbsListView.OnScrollList
                          Log.e(LOG_TAG, t.getMessage());
                     }
                 });
+            return null;
+        }
+    }
+
+    private class TrailersTask extends AsyncTask<Integer, Void, Void> {
+        @Override
+        protected Void doInBackground(Integer... params) {
+            return null;
+        }
+    }
+
+    private class ReviewsTask extends AsyncTask<Integer, Void, Void> {
+        @Override
+        protected Void doInBackground(Integer... params) {
             return null;
         }
     }

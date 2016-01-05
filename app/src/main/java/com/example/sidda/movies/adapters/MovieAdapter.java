@@ -1,13 +1,12 @@
-package com.example.sidda.movies;
+package com.example.sidda.movies.adapters;
 
-import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
 import android.widget.BaseAdapter;
-import android.widget.GridView;
 import android.widget.ImageView;
 
+import com.example.sidda.movies.R;
 import com.example.sidda.movies.constants.MovieConstants;
 import com.example.sidda.movies.model.Movie;
 import com.squareup.picasso.Picasso;

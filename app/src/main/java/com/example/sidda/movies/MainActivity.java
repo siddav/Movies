@@ -21,9 +21,7 @@ public class MainActivity extends AppCompatActivity implements MoviesFragment.On
         setContentView(R.layout.activity_main);
         Toolbar toolbar = (Toolbar) findViewById(R.id.toolbar);
         setSupportActionBar(toolbar);
-        MovieDetailFragment movieDetailFragment = (MovieDetailFragment) getFragmentManager()
-                .findFragmentById(R.id.movie_detail_frag);
-        if (movieDetailFragment != null) {
+        if (findViewById(R.id.movie_detail_frag) != null) {
            isTwoPaneLayout = true;
         }
         /**FloatingActionButton fab = (FloatingActionButton) findViewById(R.id.fab);
@@ -54,7 +52,7 @@ public class MainActivity extends AppCompatActivity implements MoviesFragment.On
         /**if (id == R.id.action_settings) {
             return true;
         } **/
-        MoviesFragment moviesFragment = (MoviesFragment) getFragmentManager().findFragmentById(R.id.movies_frag);
+        MoviesFragment moviesFragment = (MoviesFragment) getSupportFragmentManager().findFragmentById(R.id.movies_frag);
         SharedPreferences preferences = PreferenceManager.getDefaultSharedPreferences(this);
         SharedPreferences.Editor editor = preferences.edit();
         switch (id) {
@@ -79,7 +77,7 @@ public class MainActivity extends AppCompatActivity implements MoviesFragment.On
             intent.putExtra("movieId", position);
             startActivity(intent);
         } else {
-            MovieDetailFragment movieDetailFragment = (MovieDetailFragment) getFragmentManager()
+            MovieDetailFragment movieDetailFragment = (MovieDetailFragment) getSupportFragmentManager()
                     .findFragmentById(R.id.movie_detail_frag);
             movieDetailFragment.updateContent(position);
         }

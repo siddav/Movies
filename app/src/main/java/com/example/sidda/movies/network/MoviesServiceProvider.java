@@ -19,8 +19,6 @@ public class MoviesServiceProvider {
         logging.setLevel(HttpLoggingInterceptor.Level.BODY);
 
         OkHttpClient httpClient = new OkHttpClient();
-// add your other interceptors …
-
 // add logging as last interceptor
         httpClient.interceptors().add(logging);
 
