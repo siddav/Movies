@@ -16,7 +16,7 @@ import java.util.List;
 public class ReviewsAdapter extends BaseAdapter {
     List<MovieReview> reviews = new ArrayList<>();
 
-    public void addAllVideos(List<MovieReview> revs) {
+    public void addAllReviews(List<MovieReview> revs) {
         reviews.addAll(revs);
         notifyDataSetChanged();
     }

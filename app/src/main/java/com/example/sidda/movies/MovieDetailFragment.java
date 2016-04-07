@@ -1,14 +1,17 @@
 package com.example.sidda.movies;
 
 import android.app.Activity;
+import android.content.Intent;
 import android.net.Uri;
 import android.os.AsyncTask;
 import android.os.Bundle;
 import android.support.v4.app.Fragment;
+import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
 import android.widget.ImageView;
+import android.widget.ListView;
 import android.widget.TextView;
 import com.example.sidda.movies.adapters.ReviewsAdapter;
 import com.example.sidda.movies.adapters.TrailersAdapter;
@@ -55,10 +58,10 @@ public class MovieDetailFragment extends Fragment {
     @Bind(R.id.movie_length) TextView movieLength;
     @Bind(R.id.rating) TextView rating;
     @Bind(R.id.movie_description) TextView description;
-    /*@Bind(R.id.trailers_thumbnails)
-    ListView thumbNailsListView;
-    @Bind(R.id.movie_reviews)
-    ListView reviewsListView;*/
+    @Bind(R.id.list_reviews)
+    ListView reviewsList;
+    @Bind(R.id.list_trailers)
+    ListView trailersList;
 
     ReviewsAdapter reviewsAdapter = new ReviewsAdapter();
     TrailersAdapter trailersAdapter = new TrailersAdapter();
@@ -75,14 +78,13 @@ public class MovieDetailFragment extends Fragment {
      * Use this factory method to create a new instance of
      * this fragment using the provided parameters.
      *
-     * @param param1 Parameter 1.
-     * @param param2 Parameter 2.
      * @return A new instance of fragment MovieDetailFragment.
      */
     // TODO: Rename and change types and number of parameters
-    public static MovieDetailFragment newInstance(String param1, String param2) {
+    public static MovieDetailFragment newInstance(long movieId) {
         MovieDetailFragment fragment = new MovieDetailFragment();
         Bundle args = new Bundle();
+        args.putLong(SELECTED_MOVIE_ID, movieId);
         fragment.setArguments(args);
         return fragment;
     }
@@ -98,19 +100,14 @@ public class MovieDetailFragment extends Fragment {
           movie = savedInstanceState.getParcelable(SELECTED_MOVIE);
           updateContent(movie);
         }
-        /*else {
-            Intent intent = getActivity().getIntent();
-            if(intent.getExtras() != null) {
-                selectedMovieId = intent.getExtras().getLong("movieId");
-                new FetchMovieTask().execute(selectedMovieId);
+        else {
+                updateContent(selectedMovieId);
             }
-        }*/
     }
 
     @Override
     public void onResume() {
         super.onResume();
-        //updateContent(selectedMovieId);
     }
 
     @Override
@@ -127,8 +124,8 @@ public class MovieDetailFragment extends Fragment {
         // Inflate the layout for this fragment
         View view = inflater.inflate(R.layout.fragment_movie_detail, container, false);
         ButterKnife.bind(this, view);
-        /*thumbNailsListView.setAdapter(trailersAdapter);
-        reviewsListView.setAdapter(reviewsAdapter);*/
+        reviewsList.setAdapter(reviewsAdapter);
+        trailersList.setAdapter(trailersAdapter);
         return view;
     }
 
@@ -160,7 +157,7 @@ public class MovieDetailFragment extends Fragment {
         getView().setVisibility(View.VISIBLE);
         new FetchMovieTask().execute(movieId);
         new FetchTrailersTask().execute(movieId);
-        //new FetchReviewsTask().execute(movieId);
+        new FetchReviewsTask().execute(movieId);
     }
 
     public void updateContent(Movie movie) {
@@ -183,7 +180,7 @@ public class MovieDetailFragment extends Fragment {
 
     public void updateReviews(MovieReviewsResponse reviewsResponse) {
         if(reviewsResponse != null && reviewsResponse.reviews != null) {
-            reviewsAdapter.addAllVideos(reviewsResponse.reviews);
+            reviewsAdapter.addAllReviews(reviewsResponse.reviews);
         }
     }
     /**
@@ -245,6 +242,7 @@ public class MovieDetailFragment extends Fragment {
             call.enqueue(new Callback<VideoResponse>() {
                 @Override
                 public void onResponse(Response<VideoResponse> response, Retrofit retrofit) {
+                    Log.i("Trailers Task", " response body " + response);
                     if(response.isSuccess()) {
                         VideoResponse videoResponse = response.body();
                         if(videoResponse!=null) {
@@ -255,7 +253,7 @@ public class MovieDetailFragment extends Fragment {
 
                 @Override
                 public void onFailure(Throwable t) {
-
+                    Log.i("Trailers Task", " failed ");
                 }
             });
             return null;

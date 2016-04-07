@@ -8,7 +8,8 @@ import java.util.List;
  * Created by sidda on 10/12/15.
  */
 public class VideoResponse {
+    @SerializedName("id")
     public long id;
     @SerializedName("results")
-    public List<Video> videos;
+    public List<MovieVideos> videos;
 }

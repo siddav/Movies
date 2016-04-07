@@ -13,5 +13,8 @@
     </style>
     <style name="AppTheme.AppBarOverlay" parent="ThemeOverlay.AppCompat.Dark.ActionBar" />
     <style name="AppTheme.PopupOverlay" parent="ThemeOverlay.AppCompat.Light" />
-
+     <style name="movie_detail_title">
+         <item name="android:textSize">14sp</item>
+         <item name="android:textColor">@color/colorBlack</item>
+     </style>
 </resources>

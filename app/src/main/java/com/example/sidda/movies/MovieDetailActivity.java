@@ -8,7 +8,7 @@ import android.support.v7.widget.Toolbar;
 import android.widget.Toast;
 
 public class MovieDetailActivity extends AppCompatActivity implements MovieDetailFragment.OnFragmentInteractionListener {
-
+private static final String MOVIE_DETAIL_FRAGMENT = "movie_detail_fragment";
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
@@ -18,19 +18,19 @@ public class MovieDetailActivity extends AppCompatActivity implements MovieDetai
         getSupportActionBar().setDisplayShowHomeEnabled(true);
         getSupportActionBar().setDisplayHomeAsUpEnabled(true);
 
-        /*if (savedInstanceState == null) {
+        if (savedInstanceState == null) {
             // Create the detail fragment and add it to the activity
             // using a fragment transaction.
 
             Bundle arguments = new Bundle();
             arguments.putLong(MovieDetailFragment.SELECTED_MOVIE_ID, getIntent().getExtras().getLong("movieId"));
 
-            Fragment fragment = new MovieDetailFragment();
+            Fragment fragment = MovieDetailFragment.newInstance(getIntent().getExtras().getLong("movieId"));
             fragment.setArguments(arguments);
 
             getSupportFragmentManager().beginTransaction()
-                    .add(R.id.movie_detail_frag, fragment, null).commit();
-        }*/
+                    .add(R.id.movie_detail_frag_container, fragment, MOVIE_DETAIL_FRAGMENT).commit();
+        }
 
         /**FloatingActionButton fab = (FloatingActionButton) findViewById(R.id.fab);
         fab.setOnClickListener(new View.OnClickListener() {

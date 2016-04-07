@@ -83,12 +83,35 @@
         android:background="@color/colorBlack"
         android:layout_below="@+id/movie_description"/>
     <TextView
+        android:id="@+id/trailers_title"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
         android:text="@string/trailers"
-        android:textSize="14sp"
+        style="@style/movie_detail_title"
         android:layout_margin="5dp"
         android:layout_below="@+id/horizontal_ruler"/>
-
+    <ListView android:id="@+id/list_trailers"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_below="@+id/trailers_title"/>
+    <View
+        android:id="@+id/horizontal_ruler2"
+        android:layout_width="match_parent"
+        android:layout_height="2dp"
+        android:layout_margin="10dp"
+        android:background="@color/colorBlack"
+        android:layout_below="@+id/list_trailers"/>
+    <TextView
+        android:id="@+id/reviews_title"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:text="@string/reviews"
+        style="@style/movie_detail_title"
+        android:layout_margin="5dp"
+        android:layout_below="@+id/horizontal_ruler2"/>
+    <ListView android:id="@+id/list_reviews"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_below="@+id/reviews_title"/>
 </RelativeLayout>
 </ScrollView>
